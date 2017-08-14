@@ -10,7 +10,7 @@
 
 - Initial release
 - This release exposes a pub/sub scheme using unix named pipes. 
-- The interface is designed to test IPC flow between Connect and Captury Kiosk using a schemeless message structure using a serialized JSON string using Unicode characters, wrapped in double quotes, using backslash escapes.
+- The interface is designed to test IPC flow between Connect and Capture Kiosk using a schemeless message structure using a serialized JSON string using Unicode characters, wrapped in double quotes, using backslash escapes.
 
 Binaries:
 
@@ -19,7 +19,7 @@ Binaries:
 
 ## Table of Contents
 
-- [Security](#security)
+- [Functional Requirements](#)
 - [Background](#background)
 - [Install](#install)
 - [Build](#build)
@@ -28,6 +28,15 @@ Binaries:
 - [Maintainers](#maintainers)
 - [Contribute](#contribute)
 - [License](#license)
+
+## Functional Requirements
+
+- Should receive command line flags (non positional arguments): pipe, string
+- Should receive and parse URI scheme requests as URL parameters
+- Should receive a string from a given named pipe (fifo)
+- Should send a string to a given named pipe (fifo)
+- Should register URI protocol (pipe://) that's accessible from a Chrome browser
+- Should be executable on linux (amd64): `GOOS=linux GOARCH=amd64 go build main.go`
 
 ## Security
 
@@ -81,15 +90,15 @@ For binary or executable storage, the recommendation is host the release binary 
 
 ```
 // Ensure binary is executable
-chmod +x connectd
+chmodx connectd
 ```
 
 ```
 // Subscribe to a channel
-./connectd -sub=exos
+./connectd -sub=hooli
 
 // Publish to a channel
-./connectd -pub=exos -message="{\"foo\":\"bar\"}"
+./connectd -pub=hooli -message="{\"foo\":\"bar\"}"
 ```
 
 ## API
@@ -108,7 +117,7 @@ Usage of ./connectd:
 
 ## Maintainers
 
-[@tzsai](https://github.com/tzsai)
+[@tzmartin](https://github.com/tzmartin)
 
 ## Contribute
 
