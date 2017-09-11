@@ -51,6 +51,8 @@ Requires go version > 1.3. Tested 1.8.3 (darwin/amd64). [Installation instructio
 ```
 go get github.com/Sirupsen/logrus
 go get github.com/tzmartin/namedpiper
+go get -u cloud.google.com/go/storage
+
 ```
 
 ## Build
@@ -118,6 +120,7 @@ Usage of ./connectd:
 ## Maintainers
 
 [@tzmartin](https://github.com/tzmartin)
+[@sophrinix](https://github.com/sophrinix)
 
 ## Contribute
 

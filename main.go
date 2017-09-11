@@ -6,15 +6,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
+	"github.com/Jeffail/gabs"
 	log "github.com/Sirupsen/logrus"
 	"github.com/tzmartin/namedpiper"
 )
 
+
 var (
 	pub      = flag.String("pub", "", "Publish to unix named pipe (fifo)")
 	sub      = flag.String("sub", "", "Subscribe to unix named pipe (fifo)")
-	message  = flag.String("message", "{\"foo\":\"bar\"}", "JSON encoded string")
+	message  = flag.String("message", "", "JSON encoded string")
 	FIFO_DIR = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
 )
 
@@ -47,6 +48,10 @@ func cleanup() {
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
+}
+
+func upload() {
+	
 }
 
 func main() {
@@ -95,7 +100,19 @@ func main() {
 		fmt.Printf("\nWaiting for events (refer to -help)\n\n")
 		for {
 			msg := <-channel
-			log.Info(msg.String())
+			//log.Info(msg.String())
+		jsonParsed, _ := gabs.ParseJSON([]byte(msg.String()))
+		log.Info(jsonParsed.String())
+		// S is shorthand for Search
+		children, _ := jsonParsed.S("object").ChildrenMap()
+		for key, child := range children {
+			//fmt.Printf("key: %v, value: %v\n", key, child.Data().(string))
+			// look for status to be done and path to exist
+			// zip path with the uuid of the JWT
+			// upload to google cloud
+			//version 2, pick specific files out of the directory
+			
+		}
 		}
 	}
 
