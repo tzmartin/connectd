@@ -1,0 +1,596 @@
+Dofs v0.5
+
+BEGIN dofs
+  translate_x               1.00
+  translate_y               1.00
+  translate_z               1.00
+  rotate_x                  1.00
+  rotate_y                  1.00
+  rotate_z                  1.00
+  spine_twist_desc          1.00
+  spine_twist               1.00
+  spine_lean                1.00
+  spine_bend                1.00
+  head_twist                1.00
+  head_lean                 1.00
+  head_bend                 1.00
+  left_clavicle_y           1.00
+  left_clavicle_z           1.00
+  left_shoulder_y           1.00
+  left_shoulder_z           1.00
+  left_shoulder_twist       0.00
+  left_elbow                1.00
+  left_elbow_virtual        1.00  virtual left_shoulder_twist
+  left_forearm_twist        0.00
+  left_hand_y               1.00
+  left_hand_z               1.00
+  right_clavicle_y          1.00
+  right_clavicle_z          1.00
+  right_shoulder_y          1.00
+  right_shoulder_z          1.00
+  right_shoulder_twist      0.00
+  right_elbow               1.00
+  right_elbow_virtual       1.00  virtual right_shoulder_twist
+  right_forearm_twist       0.00
+  right_hand_y              1.00
+  right_hand_z              1.00
+  left_hip_x                1.00
+  left_hip_z                1.00
+  left_hip_y                0.00
+  left_knee                 1.00
+  left_knee_vv              1.00
+  left_knee_rotation        1.00
+  left_ankle_x              1.00
+  left_ankle_twist          0.00
+  left_ankle_z              1.00
+  left_toes                 1.00
+  right_hip_x               1.00
+  right_hip_z               1.00
+  right_hip_y               0.00
+  right_knee                1.00
+  right_knee_vv             1.00
+  right_knee_rotation       1.00
+  right_ankle_x             1.00
+  right_ankle_twist         0.00
+  right_ankle_z             1.00
+  right_toes                1.00
+  global_scale              1.00  shared  basic
+  shoulder_scale            1.00  shared
+  arm_scale                 1.00  shared  basic
+  lowarm_scale              1.00  shared
+  hip_scale                 1.00  shared
+  leg_scale                 1.00  shared  basic
+  lowleg_scale              1.00  shared
+  foot_scale                1.00  shared
+  hip_updown                1.00  shared
+BEGIN scalingpose
+  global_scale              0.01158
+  arm_scale                 0.09993
+  leg_scale                -0.01052
+BEGIN namedpose Bend
+  translate_y               0.54000
+  rotate_x                 -0.65000
+  spine_bend               -0.90000
+  left_shoulder_z           1.60000
+  left_shoulder_twist       1.00000
+  left_elbow               -0.60000
+  left_hand_y              -0.60000
+  right_shoulder_z          1.60000
+  right_shoulder_twist      1.00000
+  right_elbow              -0.60000
+  right_hand_y             -0.60000
+  left_hip_x               -1.00000
+  left_hip_z               -0.60000
+  right_hip_x              -1.00000
+  right_hip_z              -0.60000
+  Constraint HALFPLANE   LeftToeBase_rx        17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftToeBase_rx        -52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         -22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       -17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        -22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint FIXED_AXIS  LeftToeBase_rx        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  LeftFootScale         0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightToeBase_rx       0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightFootScale        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+BEGIN namedpose Crane_left
+  translate_y               1.00000
+  left_shoulder_twist       1.60000
+  left_elbow               -1.60000
+  left_hand_z              -1.60000
+  right_shoulder_twist      1.60000
+  right_elbow              -1.60000
+  right_hand_z             -1.60000
+  left_hip_x               -1.60000
+  left_knee                -1.60000
+  left_ankle_x             -0.90000
+  Constraint HALFPLANE   RightToeBase_rx       -17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        -22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint FIXED_AXIS  RightToeBase_rx       0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightFootScale        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+BEGIN namedpose Crane_right
+  translate_y               1.00000
+  left_shoulder_twist       1.60000
+  left_elbow               -1.60000
+  left_hand_z              -1.60000
+  right_shoulder_twist      1.60000
+  right_elbow              -1.60000
+  right_hand_z             -1.60000
+  right_hip_x              -1.60000
+  right_knee               -1.60000
+  right_ankle_x            -0.90000
+  Constraint HALFPLANE   LeftToeBase_rx        17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftToeBase_rx        -52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         -22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint FIXED_AXIS  LeftToeBase_rx        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  LeftFootScale         0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+BEGIN namedpose Snap
+  translate_y               1.00000
+  left_shoulder_z          -0.70000
+  left_elbow               -1.00000
+  right_shoulder_z         -0.70000
+  right_elbow              -1.00000
+  Constraint HALFPLANE   LeftToeBase_rx        17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftToeBase_rx        -52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         -22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       -17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        -22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint FIXED_AXIS  LeftToeBase_rx        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  LeftFootScale         0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightToeBase_rx       0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightFootScale        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+BEGIN namedpose Step_left
+  translate_y               0.70000
+  left_shoulder_z           1.00000
+  left_shoulder_twist       1.60000
+  left_elbow               -1.00000
+  left_hand_z               1.20000
+  right_shoulder_z          1.00000
+  right_shoulder_twist      1.60000
+  right_elbow              -1.00000
+  right_hand_z              1.20000
+  left_hip_x               -1.40000
+  left_knee                -1.40000
+  right_hip_x               0.90000
+  right_ankle_x             0.90000
+  Constraint HALFPLANE   LeftToeBase_rx        17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftToeBase_rx        -52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         -22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       -17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint FIXED_AXIS  LeftToeBase_rx        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  LeftFootScale         0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightToeBase_rx       0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+BEGIN namedpose Step_right
+  translate_y               0.70000
+  left_shoulder_z           1.00000
+  left_shoulder_twist       1.60000
+  left_elbow               -1.00000
+  left_hand_z               1.20000
+  right_shoulder_z          1.00000
+  right_shoulder_twist      1.60000
+  right_elbow              -1.00000
+  right_hand_z              1.20000
+  left_hip_x                0.90000
+  left_ankle_x              0.90000
+  right_hip_x              -1.40000
+  right_knee               -1.40000
+  Constraint HALFPLANE   LeftToeBase_rx        17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftToeBase_rx        -52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       -17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        -22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint FIXED_AXIS  LeftToeBase_rx        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightToeBase_rx       0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightFootScale        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+BEGIN namedpose X
+  translate_y               1.00000
+  left_hip_z               -0.30000
+  right_hip_z              -0.30000
+  Constraint HALFPLANE   LeftToeBase_rx        17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftToeBase_rx        -52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         -22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   LeftFootScale         22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       -17.7 -22.6 -54.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightToeBase_rx       52.3 -22.6 -19.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        22.3 -92.6 7.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint HALFPLANE   RightFootScale        -22.7 -92.6 12.2  -1  0 0 0  0 1 0  0  0 0 0 1  50
+  Constraint FIXED_AXIS  LeftToeBase_rx        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  LeftFootScale         0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightToeBase_rx       0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+  Constraint FIXED_AXIS  RightFootScale        0 1 0  -1  0 0 0  0 1 0  0  0 0 0 0  10
+BEGIN namedpose __FailureRecovery_LeftArm_1
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.78000
+  left_shoulder_z          -0.78000
+  left_shoulder_twist       0.01000
+  left_elbow                0.01000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_1_1
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.78000
+  left_shoulder_z          -0.78000
+  left_shoulder_twist       0.01000
+  left_elbow               -1.00000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_1_2
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.78000
+  left_shoulder_z          -0.78000
+  left_shoulder_twist      -0.80000
+  left_elbow               -1.00000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_1_3
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.78000
+  left_shoulder_z          -0.78000
+  left_shoulder_twist       0.80000
+  left_elbow               -1.00000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_2
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.94000
+  left_shoulder_z           0.78000
+  left_shoulder_twist       0.01000
+  left_elbow                0.01000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_2_1
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.94000
+  left_shoulder_z           0.78000
+  left_shoulder_twist       0.01000
+  left_elbow               -1.00000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_2_2
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.94000
+  left_shoulder_z           0.78000
+  left_shoulder_twist       0.89000
+  left_elbow               -1.00000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_2_3
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.94000
+  left_shoulder_z           0.78000
+  left_shoulder_twist       1.57000
+  left_elbow               -1.00000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_3
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y           0.78000
+  left_shoulder_z           0.78000
+  left_shoulder_twist       0.01000
+  left_elbow                0.01000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_3_1
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y           0.78000
+  left_shoulder_z           0.78000
+  left_shoulder_twist       0.01000
+  left_elbow               -1.15000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_3_2
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y           0.78000
+  left_shoulder_z           0.78000
+  left_shoulder_twist      -0.70000
+  left_elbow               -1.15000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_4
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y           0.78000
+  left_shoulder_z          -0.78000
+  left_shoulder_twist       0.01000
+  left_elbow                0.01000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_4_1
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y           0.78000
+  left_shoulder_z          -0.78000
+  left_shoulder_twist       0.01000
+  left_elbow               -1.25000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_4_2
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y           0.78000
+  left_shoulder_z          -0.78000
+  left_shoulder_twist       1.29000
+  left_elbow               -1.25000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_5
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -1.66000
+  left_shoulder_z           0.01000
+  left_shoulder_twist       0.01000
+  left_elbow                0.01000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_5_1
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -1.66000
+  left_shoulder_z           0.01000
+  left_shoulder_twist       1.55000
+  left_elbow               -1.25000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_6
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.01000
+  left_shoulder_z          -0.01000
+  left_shoulder_twist       0.01000
+  left_elbow                0.01000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_6_1
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.01000
+  left_shoulder_z          -0.01000
+  left_shoulder_twist       0.01000
+  left_elbow               -1.35000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftArm_6_2
+  left_clavicle_y           0.01000
+  left_clavicle_z           0.01000
+  left_shoulder_y          -0.01000
+  left_shoulder_z          -0.01000
+  left_shoulder_twist       1.40000
+  left_elbow               -1.35000
+  left_elbow_virtual        0.01000
+  left_forearm_twist        0.01000
+  left_hand_y               0.01000
+  left_hand_z               0.01000
+BEGIN namedpose __FailureRecovery_LeftLeg_1
+  left_hip_x               -0.01000
+  left_hip_z               -0.01000
+BEGIN namedpose __FailureRecovery_LeftLeg_2
+  left_hip_x               -0.88000
+BEGIN namedpose __FailureRecovery_LeftLeg_3
+  left_hip_x                0.88000
+  left_hip_z               -0.14000
+BEGIN namedpose __FailureRecovery_LeftLeg_4
+  left_hip_z               -0.76000
+BEGIN namedpose __FailureRecovery_RightArm_1
+  right_clavicle_y          0.01000
+  right_clavicle_z          0.01000
+  right_shoulder_y         -0.78000
+  right_shoulder_z         -0.78000
+  right_shoulder_twist      0.01000
+  right_elbow               0.01000
+  right_elbow_virtual       0.01000
+  right_forearm_twist       0.01000
+  right_hand_y              0.01000
+  right_hand_z              0.01000
+BEGIN namedpose __FailureRecovery_RightArm_2
+  right_clavicle_y          0.01000
+  right_clavicle_z          0.01000
+  right_shoulder_y         -0.94000
+  right_shoulder_z          0.78000
+  right_shoulder_twist      0.01000
+  right_elbow               0.01000
+  right_elbow_virtual       0.01000
+  right_forearm_twist       0.01000
+  right_hand_y              0.01000
+  right_hand_z              0.01000
+BEGIN namedpose __FailureRecovery_RightArm_3
+  right_clavicle_y          0.01000
+  right_clavicle_z          0.01000
+  right_shoulder_y          0.78000
+  right_shoulder_z          0.78000
+  right_shoulder_twist      0.01000
+  right_elbow               0.01000
+  right_elbow_virtual       0.01000
+  right_forearm_twist       0.01000
+  right_hand_y              0.01000
+  right_hand_z              0.01000
+BEGIN namedpose __FailureRecovery_RightArm_4
+  right_clavicle_y          0.01000
+  right_clavicle_z          0.01000
+  right_shoulder_y          0.78000
+  right_shoulder_z         -0.78000
+  right_shoulder_twist      0.01000
+  right_elbow               0.01000
+  right_elbow_virtual       0.01000
+  right_forearm_twist       0.01000
+  right_hand_y              0.01000
+  right_hand_z              0.01000
+BEGIN namedpose __FailureRecovery_RightArm_5
+  right_clavicle_y          0.01000
+  right_clavicle_z          0.01000
+  right_shoulder_y         -1.66000
+  right_shoulder_z          0.01000
+  right_shoulder_twist      0.01000
+  right_elbow               0.01000
+  right_elbow_virtual       0.01000
+  right_forearm_twist       0.01000
+  right_hand_y              0.01000
+  right_hand_z              0.01000
+BEGIN namedpose __FailureRecovery_RightArm_6
+  right_clavicle_y          0.01000
+  right_clavicle_z          0.01000
+  right_shoulder_y         -0.01000
+  right_shoulder_z         -0.01000
+  right_shoulder_twist      0.01000
+  right_elbow               0.01000
+  right_elbow_virtual       0.01000
+  right_forearm_twist       0.01000
+  right_hand_y              0.01000
+  right_hand_z              0.01000
+BEGIN namedpose __FailureRecovery_RightLeg_1
+  right_hip_x              -0.01000
+  right_hip_z              -0.01000
+BEGIN namedpose __FailureRecovery_RightLeg_2
+  right_hip_x              -0.88000
+BEGIN namedpose __FailureRecovery_RightLeg_3
+  right_hip_x               0.88000
+  right_hip_z              -0.14000
+BEGIN namedpose __FailureRecovery_RightLeg_4
+  right_hip_z              -0.76000
+BEGIN map
+                  Root_tx =  0.000 +  1000.000 translate_x            
+                  Root_ty =  0.000 +  1000.000 translate_y            
+                  Root_tz =  0.000 +  1000.000 translate_z            
+                  Root_rz =  0.000 +  3.000 rotate_z               
+                  Root_ry =  0.000 +  3.000 rotate_y               
+                  Root_rx =  0.000 +  3.000 rotate_x               
+              GlobalScale =  0.000 +  1.000 global_scale           
+                Spine3_ry =  0.000 +  0.200 spine_twist             +  0.200 spine_twist_desc       
+                Spine3_rz =  0.000 +  0.500 spine_lean             
+                Spine3_rx =  0.000 +  0.500 spine_bend             
+                Spine4_ry =  0.000 +  0.200 spine_twist            
+                Spine4_rz =  0.000 +  0.500 spine_lean             
+                Spine4_rx =  0.000 +  0.500 spine_bend             
+                Spine2_ry =  0.000 +  0.200 spine_twist             +  0.100 spine_twist_desc       
+                Spine2_rz =  0.000 +  0.500 spine_lean             
+                Spine2_rx =  0.000 +  0.500 spine_bend             
+                Spine1_ry =  0.000 +  0.200 spine_twist             +  0.050 spine_twist_desc       
+                Spine1_rz =  0.000 +  0.500 spine_lean             
+                Spine1_rx =  0.000 +  0.500 spine_bend             
+                 Spine_ry =  0.000 +  0.200 spine_twist            
+                 Spine_rz =  0.000 +  0.500 spine_lean             
+                 Spine_rx =  0.000 +  0.500 spine_bend             
+                  Neck_ry =  0.000 +  0.333 head_twist             
+                  Neck_rz =  0.000 +  0.500 head_lean              
+                  Neck_rx =  0.000 +  0.500 head_bend              
+                  Head_ry =  0.000 +  0.667 head_twist             
+                  Head_rz =  0.000 +  0.500 head_lean              
+                  Head_rx =  0.000 +  0.500 head_bend              
+                   HeadEE =  0.000
+          LeftShoulder_ry =  0.000 +  1.000 left_clavicle_y        
+          LeftShoulder_rz =  0.000 +  1.000 left_clavicle_z        
+               LeftArm_tx =  0.000 +  1000.000 shoulder_scale         
+               LeftArm_rz =  0.000 +  1.000 left_shoulder_z        
+               LeftArm_rx =  0.000 +  1.000 left_shoulder_y        
+               LeftArm_ry =  0.000 +  1.000 left_shoulder_twist    
+             LeftArmScale =  0.000 +  1.000 arm_scale              
+           LeftForeArm_rx =  0.000 +  1.000 left_elbow             
+           LeftForeArm_rz =  0.000 +  1.000 left_elbow_virtual     
+         LeftForeArmScale =  0.000 +  1.000 lowarm_scale           
+          LeftForeArmRoll =  0.000 +  1.000 left_forearm_twist     
+              LeftHand_rx =  0.000 +  1.000 left_hand_y            
+              LeftHand_ry =  0.000 +  1.000 left_hand_z            
+               LeftHandEE =  0.000
+         RightShoulder_ry =  0.000 +  1.000 right_clavicle_y       
+         RightShoulder_rz =  0.000 +  1.000 right_clavicle_z       
+              RightArm_tx =  0.000 +  1000.000 shoulder_scale         
+              RightArm_rz =  0.000 +  1.000 right_shoulder_z       
+              RightArm_rx =  0.000 +  1.000 right_shoulder_y       
+              RightArm_ry =  0.000 +  1.000 right_shoulder_twist   
+            RightArmScale =  0.000 +  1.000 arm_scale              
+          RightForeArm_rx =  0.000 +  1.000 right_elbow            
+          RightForeArm_rz =  0.000 +  1.000 right_elbow_virtual    
+        RightForeArmScale =  0.000 +  1.000 lowarm_scale           
+         RightForeArmRoll =  0.000 +  1.000 right_forearm_twist    
+             RightHand_rx =  0.000 +  1.000 right_hand_y           
+             RightHand_ry =  0.000 +  1.000 right_hand_z           
+              RightHandEE =  0.000
+             LeftUpLeg_tx =  0.000 +  1000.000 hip_scale              
+             LeftUpLeg_ty =  0.000 +  1000.000 hip_updown             
+             LeftUpLeg_rx =  0.000 +  1.000 left_hip_x             
+             LeftUpLeg_rz =  0.000 +  1.000 left_hip_z             
+             LeftUpLeg_ry =  0.000 +  0.350 left_hip_y             
+             LeftLegScale =  0.000 +  1.000 leg_scale              
+               LeftLeg_rx =  0.000 +  1.000 left_knee              
+               LeftLeg_rz =  0.000 +  0.350 left_knee_vv           
+               LeftLeg_ry =  0.000 +  1.000 left_knee_rotation     
+          LeftLowLegScale =  0.000 +  1.000 lowleg_scale           
+              LeftFoot_rx =  0.000 +  1.000 left_ankle_x           
+              LeftFoot_ry =  0.000 +  1.000 left_ankle_twist       
+              LeftFoot_rz =  0.000 +  1.000 left_ankle_z           
+            LeftFootScale =  0.000 +  1.000 foot_scale             
+           LeftToeBase_rx =  0.000 +  1.000 left_toes              
+               LeftFootEE =  0.000
+            RightUpLeg_tx =  0.000 +  1000.000 hip_scale              
+            RightUpLeg_ty =  0.000 +  1000.000 hip_updown             
+            RightUpLeg_rx =  0.000 +  1.000 right_hip_x            
+            RightUpLeg_rz =  0.000 +  1.000 right_hip_z            
+            RightUpLeg_ry =  0.000 +  0.350 right_hip_y            
+            RightLegScale =  0.000 +  1.000 leg_scale              
+              RightLeg_rx =  0.000 +  1.000 right_knee             
+              RightLeg_rz =  0.000 +  0.350 right_knee_vv          
+              RightLeg_ry =  0.000 +  1.000 right_knee_rotation    
+         RightLowLegScale =  0.000 +  1.000 lowleg_scale           
+             RightFoot_rx =  0.000 +  1.000 right_ankle_x          
+             RightFoot_ry =  0.000 +  1.000 right_ankle_twist      
+             RightFoot_rz =  0.000 +  1.000 right_ankle_z          
+           RightFootScale =  0.000 +  1.000 foot_scale             
+          RightToeBase_rx =  0.000 +  1.000 right_toes             
+              RightFootEE =  0.000

@@ -1,0 +1,8 @@
+Actors	snapPoseSkeleton-4
+Duration	03.040
+DurationInFrames	152
+Framerate	50/1
+Processed	
+StartTimestamp	1498760189182756
+SubFrame	5621/20000;16343/20000;543/4000;2597/20000;1/32;4529/10000;16909/20000;14151/20000
+Time	2017-06-29 13:16:29
