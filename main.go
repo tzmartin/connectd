@@ -3,14 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 	"github.com/Jeffail/gabs"
 	log "github.com/Sirupsen/logrus"
 	"github.com/tzmartin/namedpiper"
+	"os"
+	"os/signal"
+	"syscall"
 )
-
 
 var (
 	pub      = flag.String("pub", "", "Publish to unix named pipe (fifo)")
@@ -50,8 +49,18 @@ func init() {
 	log.SetFormatter(&log.TextFormatter{})
 }
 
+// This is where we can maintain the white list of files to grab out of a session
+func fileWhiteListHandler() {
+
+}
+
+func gzipHandler() {
+
+}
+
+// this will need to both upload and then read the md5Hash upon response to ensure a complete upload
 func upload() {
-	
+
 }
 
 func main() {
@@ -101,18 +110,36 @@ func main() {
 		for {
 			msg := <-channel
 			//log.Info(msg.String())
-		jsonParsed, _ := gabs.ParseJSON([]byte(msg.String()))
-		log.Info(jsonParsed.String())
-		// S is shorthand for Search
-		children, _ := jsonParsed.S("object").ChildrenMap()
-		for key, child := range children {
-			//fmt.Printf("key: %v, value: %v\n", key, child.Data().(string))
-			// look for status to be done and path to exist
-			// zip path with the uuid of the JWT
-			// upload to google cloud
-			//version 2, pick specific files out of the directory
-			
-		}
+			jsonParsed, _ := gabs.ParseJSON([]byte(msg.String()))
+
+			// S is shorthand for Search
+			children, _ := jsonParsed.ChildrenMap()
+			for key, child := range children {
+				if key == "status" {
+					fmt.Printf("STATUS IS: value: %v\n", child.Data().(string))
+					// behavior could eaisly diverge later, but for now
+					// REQUEST-NEW-SESSION, SESSION-COMPLETE, and SESSION-PARTIAL all have the same behavior.
+					// This is technically violating dry, but for the time being I am valuing ease of extendibility
+					// over strict SOLD adherance.
+					switch status := child.Data(); status {
+					case "REQUEST-NEW-SESSION":
+						fmt.Println("New Session Acknowledged. No Action to be taken.")
+					case "SESSION-COMPLETE":
+						//fmt.Println("Here is the rest of the object %v", children)
+						//	fileWhiteListHandler
+						// fileWhiteListHandler(children,compress,upload)
+
+					case "SESSION-PARTIAL":
+
+					case "SESSION-ABORT":
+
+					default:
+						// do nothing for now.
+						fmt.Printf("We did not see a status. No action taken")
+					}
+				}
+			}
+
 		}
 	}
 
