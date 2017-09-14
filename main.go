@@ -3,18 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/Jeffail/gabs"
+	log "github.com/Sirupsen/logrus"
+	"github.com/tzmartin/namedpiper"
 	"os"
 	"os/signal"
 	"syscall"
-
-	log "github.com/Sirupsen/logrus"
-	"github.com/tzmartin/namedpiper"
 )
 
 var (
 	pub      = flag.String("pub", "", "Publish to unix named pipe (fifo)")
 	sub      = flag.String("sub", "", "Subscribe to unix named pipe (fifo)")
-	message  = flag.String("message", "{\"foo\":\"bar\"}", "JSON encoded string")
+	message  = flag.String("message", "", "JSON encoded string")
 	FIFO_DIR = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
 )
 
@@ -47,6 +47,23 @@ func cleanup() {
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
+}
+
+// This is where we can maintain the white list of files to grab out of a session
+func fileWhiteListHandler(path string) string{
+fmt.Println("Inspecting:  ",path)
+ return path
+}
+
+func gzipHandler(path string) string {
+	fmt.Println("compressing:  ",path)
+	return path
+}
+
+// this will need to both upload and then read the md5Hash upon response to ensure a complete upload
+func upload(file string) {
+	fmt.Println("uploading:  ",file)
+
 }
 
 func main() {
@@ -86,7 +103,6 @@ func main() {
 		defer namedpiper.Unregister(*sub)
 
 		if err != nil {
-			// fmt.Println(err)
 			log.Panic(fmt.Sprintf("Could not create fifo: %s exists", *sub))
 		}
 
@@ -95,7 +111,33 @@ func main() {
 		fmt.Printf("\nWaiting for events (refer to -help)\n\n")
 		for {
 			msg := <-channel
-			log.Info(msg.String())
+			//log.Info(msg.String())
+			jsonParsed, _ := gabs.ParseJSON([]byte(msg.String()))
+
+			  status :=  jsonParsed.Path("status").Data()
+				capture_directory  :=  jsonParsed.Path("data.path").Data().(string)
+
+					switch statusState := status; statusState {
+					case "REQUEST-NEW-SESSION":
+						fmt.Println("New Session Acknowledged. No Action to be taken.")
+					case "SESSION-COMPLETE":
+						 filesToCompress := fileWhiteListHandler(capture_directory)
+						 uploadFile := gzipHandler(filesToCompress)
+						 upload(uploadFile)
+					case "SESSION-PARTIAL":
+
+					case "SESSION-ABORT":
+						fmt.Printf("Deleting (recursively) %v",capture_directory)
+						os.RemoveAll(capture_directory)
+						
+
+					default:
+						// do nothing for now.
+						fmt.Printf("We did not see a valid status. No action taken")
+					}
+				//}
+			//}
+
 		}
 	}
 
