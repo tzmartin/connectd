@@ -50,16 +50,19 @@ func init() {
 }
 
 // This is where we can maintain the white list of files to grab out of a session
-func fileWhiteListHandler() {
-
+func fileWhiteListHandler(path string) string{
+fmt.Println("Inspecting:  ",path)
+ return path
 }
 
-func gzipHandler() {
-
+func gzipHandler(path string) string {
+	fmt.Println("compressing:  ",path)
+	return path
 }
 
 // this will need to both upload and then read the md5Hash upon response to ensure a complete upload
-func upload() {
+func upload(file string) {
+	fmt.Println("uploading:  ",file)
 
 }
 
@@ -100,7 +103,6 @@ func main() {
 		defer namedpiper.Unregister(*sub)
 
 		if err != nil {
-			// fmt.Println(err)
 			log.Panic(fmt.Sprintf("Could not create fifo: %s exists", *sub))
 		}
 
@@ -112,33 +114,29 @@ func main() {
 			//log.Info(msg.String())
 			jsonParsed, _ := gabs.ParseJSON([]byte(msg.String()))
 
-			// S is shorthand for Search
-			children, _ := jsonParsed.ChildrenMap()
-			for key, child := range children {
-				if key == "status" {
-					fmt.Printf("STATUS IS: value: %v\n", child.Data().(string))
-					// behavior could eaisly diverge later, but for now
-					// REQUEST-NEW-SESSION, SESSION-COMPLETE, and SESSION-PARTIAL all have the same behavior.
-					// This is technically violating dry, but for the time being I am valuing ease of extendibility
-					// over strict SOLD adherance.
-					switch status := child.Data(); status {
+			  status :=  jsonParsed.Path("status").Data()
+				capture_directory  :=  jsonParsed.Path("data.path").Data().(string)
+
+					switch statusState := status; statusState {
 					case "REQUEST-NEW-SESSION":
 						fmt.Println("New Session Acknowledged. No Action to be taken.")
 					case "SESSION-COMPLETE":
-						//fmt.Println("Here is the rest of the object %v", children)
-						//	fileWhiteListHandler
-						// fileWhiteListHandler(children,compress,upload)
-
+						 filesToCompress := fileWhiteListHandler(capture_directory)
+						 uploadFile := gzipHandler(filesToCompress)
+						 upload(uploadFile)
 					case "SESSION-PARTIAL":
 
 					case "SESSION-ABORT":
+						fmt.Printf("Deleting (recursively) %v",capture_directory)
+						os.RemoveAll(capture_directory)
+						
 
 					default:
 						// do nothing for now.
-						fmt.Printf("We did not see a status. No action taken")
+						fmt.Printf("We did not see a valid status. No action taken")
 					}
-				}
-			}
+				//}
+			//}
 
 		}
 	}
