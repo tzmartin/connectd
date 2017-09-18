@@ -290,9 +290,16 @@ func main() {
 				fmt.Println(reflect.TypeOf(uploadFile))
 				UploadGCS(fmt.Sprint(capture_directory+"/.."), fmt.Sprint(filename+".tar"))
 			case "SESSION-PARTIAL":
-				//filesToCompress := fileWhiteListHandler(capture_directory)
-				//uploadFile := gzipHandler(filesToCompress)
-				//upload(uploadFile)
+
+				//	uploadFile := "b308ebc9-1a9d-400c-a26d-f17bf0b87005.zip"
+				//	filesToCompress := fileWhiteListHandler(capture_directory)
+
+				uploadFile := tarit(capture_directory, pwd)
+
+				filename := filepath.Base(capture_directory)
+
+				fmt.Println(reflect.TypeOf(uploadFile))
+				UploadGCS(fmt.Sprint(capture_directory+"/.."), fmt.Sprint(filename+".tar"))
 			case "SESSION-ABORT":
 				fmt.Printf("Deleting (recursively) %v", capture_directory)
 				os.RemoveAll(capture_directory)
