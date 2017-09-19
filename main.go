@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	pub      = flag.String("pub", "", "Publish to unix named pipe (fifo)")
+	pub      = flag.String("pub", "dariconnect", "Publish to unix named pipe (fifo)")
 	sub      = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
 	message  = flag.String("message", "", "JSON encoded string")
 	FIFO_DIR = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
@@ -250,6 +250,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+		os.Exit(0)
 	}
 
 	if *sub != "" {
@@ -289,6 +290,7 @@ func main() {
 
 				fmt.Println(reflect.TypeOf(uploadFile))
 				UploadGCS(fmt.Sprint(capture_directory+"/.."), fmt.Sprint(filename+".tar"))
+
 			case "SESSION-PARTIAL":
 
 				//	uploadFile := "b308ebc9-1a9d-400c-a26d-f17bf0b87005.zip"
@@ -303,9 +305,11 @@ func main() {
 			case "SESSION-ABORT":
 				fmt.Printf("Deleting (recursively) %v", capture_directory)
 				os.RemoveAll(capture_directory)
+
 			default:
 				// do nothing for now.
 				fmt.Printf("We did not see a valid status. No action taken")
+
 			}
 
 		}
