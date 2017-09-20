@@ -27,10 +27,11 @@ var (
 	sub      = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
 	message  = flag.String("message", "", "JSON encoded string")
 	FIFO_DIR = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
+	complete_directory = flag.String("complete_dir", "~/dariconnect/complete", "directory to stash completed files")
+	staging_directory = flag.String("staging_dir", "~/dariconnect/staging", "directory to stash tar files upon creation")
 )
 
-// Create a new instance of the logger. You can have any number of instances.
-// var log = logrus.New()
+
 
 //create a map for storing clear funcs
 var clear map[string]func()
@@ -225,7 +226,7 @@ func main() {
 	print("\033[H\033[2J")
 	flag.Parse()
 	fmt.Println("\nDARI Connect")
-	fmt.Println("Version 0.0.1")
+	fmt.Println("Version 0.0.2")
 	fmt.Println("Copyright (c) 2017 Scientific Analytics, Inc.")
 	fmt.Println("")
 
@@ -241,17 +242,6 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// detect
-	if *pub != "" {
-		msg := namedpiper.Msg{*message}
-		log.Info("Sending to: ", *pub, msg.String())
-
-		err := namedpiper.Send(&msg, *pub)
-		if err != nil {
-			fmt.Println(err)
-		}
-		os.Exit(0)
-	}
 
 	if *sub != "" {
 		channel, err := namedpiper.Register(*sub, *FIFO_DIR)
@@ -271,52 +261,94 @@ func main() {
 
 			status := jsonParsed.Path("status").Data()
 			capture_directory := jsonParsed.Path("data.path").Data().(string)
-			pwd, err := os.Getwd()
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+
 			switch statusState := status; statusState {
 			case "REQUEST-NEW-SESSION":
-				fmt.Println("New Session Acknowledged. No Action to be taken.")
+
+				body := strings.NewReader(msg.String())
+				req, err := http.NewRequest("POST", "https://sp-gcp-alpha.appspot.com/session", body)
+				if err != nil {
+					// handle err
+				}
+				req.Header.Set("Accept", "application/json")
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					// handle err
+				}
+				fmt.Println(resp.Body)
+				defer resp.Body.Close()
+				// {
+				// "uid": "ABCD1234",
+				// "fname": "bob",
+				// "lname": "jones",
+				// "height": "70",
+				// "weight": "180",
+				// "protocol": [],
+				// "prompt": true
+				// }
+
 			case "SESSION-COMPLETE":
 
-				//	uploadFile := "b308ebc9-1a9d-400c-a26d-f17bf0b87005.zip"
-				//	filesToCompress := fileWhiteListHandler(capture_directory)
+				uploadFile := tarit(capture_directory, *staging_directory)
 
-				uploadFile := tarit(capture_directory, pwd)
-
-				filename := filepath.Base(capture_directory)
+				filename := filepath.Base(*staging_directory)
 
 				fmt.Println(reflect.TypeOf(uploadFile))
-				UploadGCS(fmt.Sprint(capture_directory+"/.."), fmt.Sprint(filename+".tar"))
+				UploadGCS(fmt.Sprint(*staging_directory+"/.."), fmt.Sprint(filename+".tar"))
+				full_staging_file := []string{capture_directory, "/", filename, ".tar"};
+				full_complete_file := []string{*complete_directory, "/", filename, ".tar"};
+
+       err :=  os.Rename(strings.Join(full_staging_file, ""),strings.Join(full_complete_file,""))
+
+       if err != nil {
+           fmt.Println(err)
+           return
+       }
 
 			case "SESSION-PARTIAL":
 
-				//	uploadFile := "b308ebc9-1a9d-400c-a26d-f17bf0b87005.zip"
-				//	filesToCompress := fileWhiteListHandler(capture_directory)
+				uploadFile := tarit(capture_directory, *staging_directory)
 
-				uploadFile := tarit(capture_directory, pwd)
-
-				filename := filepath.Base(capture_directory)
+				filename := filepath.Base(*staging_directory)
 
 				fmt.Println(reflect.TypeOf(uploadFile))
-				UploadGCS(fmt.Sprint(capture_directory+"/.."), fmt.Sprint(filename+".tar"))
+				UploadGCS(fmt.Sprint(*staging_directory+"/.."), fmt.Sprint(filename+".tar"))
+				full_staging_file := []string{capture_directory, "/", filename, ".tar"};
+				full_complete_file := []string{*complete_directory, "/", filename, ".tar"};
+
+       err :=  os.Rename(strings.Join(full_staging_file, ""),strings.Join(full_complete_file,""))
+
+       if err != nil {
+           fmt.Println(err)
+           return
+       }
+
 			case "SESSION-ABORT":
 				fmt.Printf("Deleting (recursively) %v", capture_directory)
 				os.RemoveAll(capture_directory)
-
+				os.Exit(0)
 			default:
 				// do nothing for now.
 				fmt.Printf("We did not see a valid status. No action taken")
-
+				os.Exit(0)
 			}
-
+			os.Exit(0)
 		}
 	}
 
-	if *sub == "" && *pub == "" {
-		fmt.Println("No commands. Refer to -help")
-	}
+		// detect
+		if *pub != "" {
+			msg := namedpiper.Msg{*message}
+			log.Info("Sending to: ", *pub, msg.String())
+
+			err := namedpiper.Send(&msg, *pub)
+			if err != nil {
+				fmt.Println(err)
+			}
+			//os.Exit(0)
+		}
+
 
 }
