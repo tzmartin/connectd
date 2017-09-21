@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/tar"
-	"compress/gzip"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
@@ -14,7 +13,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"syscall"
 
@@ -28,8 +26,8 @@ var (
 	sub               = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
 	message           = flag.String("message", "", "JSON encoded string")
 	FIFO_DIR          = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
-	completeDirectory = flag.String("complete_dir", "~/dariconnect/complete", "directory to stash completed files")
-	stagingDirectory  = flag.String("staging_dir", "~/dariconnect/staging", "directory to stash tar files upon creation")
+	completeDirectory = flag.String("complete_dir", "", "directory to stash completed files")
+	stagingDirectory  = flag.String("staging_dir", "", "directory to stash tar files upon creation")
 )
 
 //create a map for storing clear funcs
@@ -53,7 +51,7 @@ func deleteFile(p string) {
 }
 
 func cleanup() {
-	deleteFile(fmt.Sprintf("%s/%s", *FIFO_DIR, *sub))
+	//deleteFile(fmt.Sprintf("%s/%s", *FIFO_DIR, *sub))
 }
 
 func init() {
@@ -68,7 +66,9 @@ func fileWhiteListHandler(path string) string {
 
 func tarit(source, target string) error {
 	filename := filepath.Base(source)
+	fmt.Println("filename var is: ", filename)
 	target = filepath.Join(target, fmt.Sprintf("%s.tar", filename))
+	fmt.Println("targer var is: ", target)
 	tarfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -88,58 +88,35 @@ func tarit(source, target string) error {
 		baseDir = filepath.Base(source)
 	}
 
-	return filepath.Walk(source,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			header, err := tar.FileInfoHeader(info, info.Name())
-			if err != nil {
-				return err
-			}
-
-			if baseDir != "" {
-				header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
-			}
-
-			if err := tarball.WriteHeader(header); err != nil {
-				return err
-			}
-
-			if info.IsDir() {
-				return nil
-			}
-
-			file, err := os.Open(path)
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-			_, err = io.Copy(tarball, file)
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
 			return err
-		})
-}
+		}
+		header, err := tar.FileInfoHeader(info, info.Name())
+		if err != nil {
+			return err
+		}
 
-func gzipit(source, target string) error {
-	reader, err := os.Open(source)
-	if err != nil {
+		if baseDir != "" {
+			header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
+		}
+
+		if err := tarball.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		_, err = io.Copy(tarball, file)
 		return err
-	}
-
-	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.gz", filename))
-	writer, err := os.Create(target)
-	if err != nil {
-		return err
-	}
-	defer writer.Close()
-
-	archiver := gzip.NewWriter(writer)
-	archiver.Name = filename
-	defer archiver.Close()
-
-	_, err = io.Copy(archiver, reader)
-	return err
+	})
 }
 
 func hash_file_md5(filePath string) (string, error) {
@@ -263,7 +240,6 @@ func main() {
 			jsonParsed, _ := gabs.ParseJSON([]byte(msg.String()))
 
 			status := jsonParsed.Path("status").Data()
-			captureDirectory := jsonParsed.Path("data.path").Data().(string)
 
 			switch statusState := status; statusState {
 			case "REQUEST-NEW-SESSION":
@@ -293,18 +269,47 @@ func main() {
 				// }
 
 			case "SESSION-COMPLETE":
+				captureDirectory := jsonParsed.Path("data.path").Data().(string)
+				fmt.Println("stagingDirectory is: ", *stagingDirectory)
 				err := tarit(captureDirectory, *stagingDirectory)
 				if err != nil {
-					// Unable to tar. todo: something
+					log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
+
 				}
 				filename := filepath.Base(*stagingDirectory)
 
 				// fmt.Println(reflect.TypeOf(uploadFile))
 				filename = filepath.Base(captureDirectory)
 				target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
-				log.Info("Uploading to GCS", target)
+
+				log.Info("Uploading to GCS: ", target)
 				UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+				fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
+
+				err = os.Rename(target, strings.Join(fullCompleteFile, ""))
+
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+			case "SESSION-PARTIAL":
+				captureDirectory := jsonParsed.Path("data.path").Data().(string)
+				fmt.Println("stagingDirectory is: ", *stagingDirectory)
+				err := tarit(captureDirectory, *stagingDirectory)
+				if err != nil {
+					log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
+
+				}
+				filename := filepath.Base(*stagingDirectory)
+
+				// fmt.Println(reflect.TypeOf(uploadFile))
+				filename = filepath.Base(captureDirectory)
+				target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
 				fullStagingFile := []string{captureDirectory, "/", filename, ".tar"}
+
+				log.Info("Uploading to GCS: ", target)
+				UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
 				fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
 
 				err = os.Rename(strings.Join(fullStagingFile, ""), strings.Join(fullCompleteFile, ""))
@@ -314,25 +319,9 @@ func main() {
 					return
 				}
 
-			case "SESSION-PARTIAL":
-
-				uploadFile := tarit(captureDirectory, *stagingDirectory)
-
-				filename := filepath.Base(*stagingDirectory)
-
-				fmt.Println(reflect.TypeOf(uploadFile))
-				UploadGCS(fmt.Sprint(*stagingDirectory+"/.."), fmt.Sprint(filename+".tar"))
-				fullStagingFile := []string{captureDirectory, "/", filename, ".tar"}
-				fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
-
-				err := os.Rename(strings.Join(fullStagingFile, ""), strings.Join(fullCompleteFile, ""))
-
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-
 			case "SESSION-ABORT":
+				captureDirectory := jsonParsed.Path("data.path").Data().(string)
+
 				fmt.Printf("Deleting (recursively) %v", captureDirectory)
 				os.RemoveAll(captureDirectory)
 				os.Exit(0)
