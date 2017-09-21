@@ -203,6 +203,7 @@ func main() {
 	flag.Parse()
 	fmt.Println("\nDARI Connect")
 	fmt.Println("Version 0.0.2")
+	fmt.Printf("pid: %d\n", os.Getpid())
 	fmt.Println("Copyright (c) 2017 Scientific Analytics, Inc.")
 	fmt.Println("")
 	fmt.Println("---FLAGS---")
