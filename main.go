@@ -2,35 +2,33 @@ package main
 
 import (
 	"archive/tar"
-	"compress/gzip"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"github.com/Jeffail/gabs"
-	log "github.com/Sirupsen/logrus"
-	"github.com/tzmartin/namedpiper"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"syscall"
+
+	"github.com/Jeffail/gabs"
+	log "github.com/Sirupsen/logrus"
+	"github.com/tzmartin/namedpiper"
 )
 
 var (
-	pub      = flag.String("pub", "", "Publish to unix named pipe (fifo)")
-	sub      = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
-	message  = flag.String("message", "", "JSON encoded string")
-	FIFO_DIR = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
+	pub               = flag.String("pub", "dariconnect", "Publish to unix named pipe (fifo)")
+	sub               = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
+	message           = flag.String("message", "", "JSON encoded string")
+	FIFO_DIR          = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
+	completeDirectory = flag.String("complete_dir", "", "directory to stash completed files")
+	stagingDirectory  = flag.String("staging_dir", "", "directory to stash tar files upon creation")
 )
-
-// Create a new instance of the logger. You can have any number of instances.
-// var log = logrus.New()
 
 //create a map for storing clear funcs
 var clear map[string]func()
@@ -53,7 +51,7 @@ func deleteFile(p string) {
 }
 
 func cleanup() {
-	deleteFile(fmt.Sprintf("%s/%s", *FIFO_DIR, *sub))
+	//deleteFile(fmt.Sprintf("%s/%s", *FIFO_DIR, *sub))
 }
 
 func init() {
@@ -68,7 +66,9 @@ func fileWhiteListHandler(path string) string {
 
 func tarit(source, target string) error {
 	filename := filepath.Base(source)
+	fmt.Println("filename var is: ", filename)
 	target = filepath.Join(target, fmt.Sprintf("%s.tar", filename))
+	fmt.Println("targer var is: ", target)
 	tarfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -88,58 +88,35 @@ func tarit(source, target string) error {
 		baseDir = filepath.Base(source)
 	}
 
-	return filepath.Walk(source,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			header, err := tar.FileInfoHeader(info, info.Name())
-			if err != nil {
-				return err
-			}
-
-			if baseDir != "" {
-				header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
-			}
-
-			if err := tarball.WriteHeader(header); err != nil {
-				return err
-			}
-
-			if info.IsDir() {
-				return nil
-			}
-
-			file, err := os.Open(path)
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-			_, err = io.Copy(tarball, file)
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
 			return err
-		})
-}
+		}
+		header, err := tar.FileInfoHeader(info, info.Name())
+		if err != nil {
+			return err
+		}
 
-func gzipit(source, target string) error {
-	reader, err := os.Open(source)
-	if err != nil {
+		if baseDir != "" {
+			header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
+		}
+
+		if err := tarball.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		_, err = io.Copy(tarball, file)
 		return err
-	}
-
-	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.gz", filename))
-	writer, err := os.Create(target)
-	if err != nil {
-		return err
-	}
-	defer writer.Close()
-
-	archiver := gzip.NewWriter(writer)
-	archiver.Name = filename
-	defer archiver.Close()
-
-	_, err = io.Copy(archiver, reader)
-	return err
+	})
 }
 
 func hash_file_md5(filePath string) (string, error) {
@@ -173,10 +150,10 @@ func hash_file_md5(filePath string) (string, error) {
 
 }
 
-// Upload a file to Google Cloud Storage
+// UploadGCS Upload a file to Google Cloud Storage
 func UploadGCS(filepath, filename string) (err error) {
 
-	file_to_upload, err := os.Open(filepath + "/" + filename)
+	fileToUpload, err := os.Open(filepath + "/" + filename)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -185,10 +162,10 @@ func UploadGCS(filepath, filename string) (err error) {
 	if err == nil {
 		fmt.Println(hash)
 	}
-	md5_checksum := hash
+	md5Checksum := hash
 
-	defer file_to_upload.Close()
-	req, err := http.NewRequest("POST", "https://www.googleapis.com/upload/storage/v1/b/sai-corp-dev-session-ingest/o?uploadType=media&name="+filename, file_to_upload)
+	defer fileToUpload.Close()
+	req, err := http.NewRequest("POST", "https://www.googleapis.com/upload/storage/v1/b/sai-corp-dev-session-ingest/o?uploadType=media&name="+filename, fileToUpload)
 	if err != nil {
 		// handle err
 	}
@@ -200,21 +177,21 @@ func UploadGCS(filepath, filename string) (err error) {
 	}
 
 	if resp.StatusCode == 200 {
-		println("Initial checksum was: ", md5_checksum)
+		println("Initial checksum was: ", md5Checksum)
 		body, err := ioutil.ReadAll(resp.Body)
 		fmt.Println("post:\n", string(body))
 		if err != nil {
 		}
 
 		// TODO: clean up  this seems rediculous
-		response_parsed, _ := gabs.ParseJSON([]byte(string(body)))
-		gcs_md5_base64 := response_parsed.Path("md5Hash").Data()
-		var gcs_md5_base64_string string = gcs_md5_base64.(string)
-		gcs_md5_hex, err := base64.StdEncoding.DecodeString(gcs_md5_base64_string)
+		responseParsed, _ := gabs.ParseJSON([]byte(string(body)))
+		gcsMd5Base64 := responseParsed.Path("md5Hash").Data()
+		var gcsMd5Base64String = gcsMd5Base64.(string)
+		gcsMd5Hex, err := base64.StdEncoding.DecodeString(gcsMd5Base64String)
 		if err != nil {
 			log.Fatal("error:", err)
 		}
-		fmt.Println("gcs hash is", gcs_md5_hex)
+		fmt.Println("gcs hash is", gcsMd5Hex)
 	}
 
 	defer resp.Body.Close()
@@ -225,9 +202,14 @@ func main() {
 	print("\033[H\033[2J")
 	flag.Parse()
 	fmt.Println("\nDARI Connect")
-	fmt.Println("Version 0.0.1")
+	fmt.Println("Version 0.0.2")
 	fmt.Println("Copyright (c) 2017 Scientific Analytics, Inc.")
 	fmt.Println("")
+	fmt.Println("---FLAGS---")
+	flag.Visit(func(a *flag.Flag) {
+		fmt.Println(a.Name, "=", a.Value)
+	})
+	fmt.Println("-----------")
 
 	// fmt.Printf("OS: %s\nArchitecture: %s\n", runtime.GOOS, runtime.GOARCH)
 
@@ -241,18 +223,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// detect
-	if *pub != "" {
-		msg := namedpiper.Msg{*message}
-		log.Info("Sending to: ", *pub, msg.String())
-
-		err := namedpiper.Send(&msg, *pub)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	if *sub != "" {
+	if *sub != "" && *message == "" {
 		channel, err := namedpiper.Register(*sub, *FIFO_DIR)
 		defer namedpiper.Unregister(*sub)
 
@@ -265,54 +236,115 @@ func main() {
 		fmt.Printf("\nWaiting for events (refer to -help)\n\n")
 		for {
 			msg := <-channel
-			//log.Info(msg.String())
+			log.Info(msg.String())
 			jsonParsed, _ := gabs.ParseJSON([]byte(msg.String()))
 
 			status := jsonParsed.Path("status").Data()
-			capture_directory := jsonParsed.Path("data.path").Data().(string)
-			pwd, err := os.Getwd()
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+
 			switch statusState := status; statusState {
 			case "REQUEST-NEW-SESSION":
-				fmt.Println("New Session Acknowledged. No Action to be taken.")
+
+				body := strings.NewReader(msg.String())
+				req, err := http.NewRequest("POST", "https://sp-gcp-alpha.appspot.com/session", body)
+				if err != nil {
+					// handle err
+				}
+				req.Header.Set("Accept", "application/json")
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					// handle err
+				}
+				fmt.Println(resp.Body)
+				defer resp.Body.Close()
+				// {
+				// "uid": "ABCD1234",
+				// "fname": "bob",
+				// "lname": "jones",
+				// "height": "70",
+				// "weight": "180",
+				// "protocol": [],
+				// "prompt": true
+				// }
+
 			case "SESSION-COMPLETE":
+				captureDirectory := jsonParsed.Path("data.path").Data().(string)
+				fmt.Println("stagingDirectory is: ", *stagingDirectory)
+				err := tarit(captureDirectory, *stagingDirectory)
+				if err != nil {
+					log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
 
-				//	uploadFile := "b308ebc9-1a9d-400c-a26d-f17bf0b87005.zip"
-				//	filesToCompress := fileWhiteListHandler(capture_directory)
+				}
+				filename := filepath.Base(*stagingDirectory)
 
-				uploadFile := tarit(capture_directory, pwd)
+				// fmt.Println(reflect.TypeOf(uploadFile))
+				filename = filepath.Base(captureDirectory)
+				target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
 
-				filename := filepath.Base(capture_directory)
+				log.Info("Uploading to GCS: ", target)
+				UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+				fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
 
-				fmt.Println(reflect.TypeOf(uploadFile))
-				UploadGCS(fmt.Sprint(capture_directory+"/.."), fmt.Sprint(filename+".tar"))
+				err = os.Rename(target, strings.Join(fullCompleteFile, ""))
+
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
 			case "SESSION-PARTIAL":
+				captureDirectory := jsonParsed.Path("data.path").Data().(string)
+				fmt.Println("stagingDirectory is: ", *stagingDirectory)
+				err := tarit(captureDirectory, *stagingDirectory)
+				if err != nil {
+					log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
 
-				//	uploadFile := "b308ebc9-1a9d-400c-a26d-f17bf0b87005.zip"
-				//	filesToCompress := fileWhiteListHandler(capture_directory)
+				}
+				filename := filepath.Base(*stagingDirectory)
 
-				uploadFile := tarit(capture_directory, pwd)
+				// fmt.Println(reflect.TypeOf(uploadFile))
+				filename = filepath.Base(captureDirectory)
+				target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+				fullStagingFile := []string{captureDirectory, "/", filename, ".tar"}
 
-				filename := filepath.Base(capture_directory)
+				log.Info("Uploading to GCS: ", target)
+				UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+				fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
 
-				fmt.Println(reflect.TypeOf(uploadFile))
-				UploadGCS(fmt.Sprint(capture_directory+"/.."), fmt.Sprint(filename+".tar"))
+				err = os.Rename(strings.Join(fullStagingFile, ""), strings.Join(fullCompleteFile, ""))
+
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
 			case "SESSION-ABORT":
-				fmt.Printf("Deleting (recursively) %v", capture_directory)
-				os.RemoveAll(capture_directory)
+				captureDirectory := jsonParsed.Path("data.path").Data().(string)
+
+				fmt.Printf("Deleting (recursively) %v", captureDirectory)
+				os.RemoveAll(captureDirectory)
+				os.Exit(0)
 			default:
 				// do nothing for now.
 				fmt.Printf("We did not see a valid status. No action taken")
+				os.Exit(0)
 			}
-
+			os.Exit(0)
 		}
 	}
 
-	if *sub == "" && *pub == "" {
-		fmt.Println("No commands. Refer to -help")
+	// detect
+	fmt.Println("HI")
+	if *pub != "" && *message != "" {
+		msg := namedpiper.Msg{*message}
+		log.Info("Sending to: ", *pub, msg.String())
+
+		err := namedpiper.Send(&msg, *pub)
+		if err != nil {
+			fmt.Println(err)
+		}
+		//os.Exit(0)
 	}
 
 }
