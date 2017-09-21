@@ -6,6 +6,11 @@
 
 ## Latest Release: 0.0.4
 
+**Release Notes: 0.0.5** - September 21, 2017
+
+- websocket server
+- spawn only one session of connectd
+
 **Release Notes: 0.0.4** - September 21, 2017
 
 - Added IPC events according to [IPC Specification](https://docs.google.com/document/d/1XOiNHH9BwMXb0EZpWmK3kljaMJnmunjiiR692iOUg6w/edit)

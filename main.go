@@ -19,7 +19,7 @@ import (
 
 	"github.com/Jeffail/gabs"
 	log "github.com/Sirupsen/logrus"
-	"github.com/tzmartin/namedpiper"
+	"github.com/fsnotify/fsnotify"
 )
 
 var (
@@ -29,6 +29,7 @@ var (
 	FIFO_DIR          = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
 	completeDirectory = flag.String("complete_dir", "", "directory to stash completed files")
 	stagingDirectory  = flag.String("staging_dir", "", "directory to stash tar files upon creation")
+	sessionDir        = flag.String("session_dir", "", "directory to save Kiosk session configuration as a JSON file")
 )
 
 // transport is an http.RoundTripper that keeps track of the in-flight
@@ -240,11 +241,44 @@ func UploadGCS(filepath, filename string) (err error) {
 	return
 }
 
+func Watcher() {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event := <-watcher.Events:
+				log.Println("event:", event)
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					log.Println("modified file:", event.Name)
+					if event.Name == "CREATE" {
+						fmt.Println("UPLOAD DATA!!!")
+						// assume it's a SESSION COMPLETE/PARTIAL from Kiosk
+					}
+				}
+			case err := <-watcher.Errors:
+				log.Println("error:", err)
+			}
+		}
+	}()
+
+	err = watcher.Add(*sessionDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	<-done
+}
+
 func main() {
 	print("\033[H\033[2J")
 	flag.Parse()
 	fmt.Println("\nDARI Connect")
-	fmt.Println("Version 0.0.3")
+	fmt.Println("Version 0.0.4")
 	fmt.Printf("pid: %d\n", os.Getpid())
 	fmt.Println("Copyright (c) 2017 Scientific Analytics, Inc.")
 	fmt.Println("")
@@ -266,128 +300,124 @@ func main() {
 		os.Exit(0)
 	}()
 
-	if *sub != "" && *message == "" {
-		channel, err := namedpiper.Register(*sub, *FIFO_DIR)
-		defer namedpiper.Unregister(*sub)
+	// JSON payload exists
+	if *message != "" {
+		log.Info(*message)
+		jsonParsed, _ := gabs.ParseJSON([]byte(*message))
 
-		if err != nil {
-			log.Panic(fmt.Sprintf("Could not create fifo: %s exists", *sub))
-		}
+		status := jsonParsed.Path("status").Data()
 
-		fmt.Printf("Subscribed to channel: %s\n", *sub)
-		fmt.Printf("Dir: %s\n", *FIFO_DIR)
-		fmt.Printf("\nWaiting for events (refer to -help)\n\n")
-		for {
-			msg := <-channel
-			log.Info(msg.String())
-			jsonParsed, _ := gabs.ParseJSON([]byte(msg.String()))
+		// Check status property in JSON object
+		switch statusState := status; statusState {
+		case "API-NEW-SESSION":
+			fmt.Println("NEW SESSION")
 
-			status := jsonParsed.Path("status").Data()
-
-			switch statusState := status; statusState {
-			case "API-NEW-SESSION":
-
-				body := strings.NewReader(msg.String())
-				req, err := http.NewRequest("POST", "https://sp-gcp-alpha.appspot.com/session", body)
-				if err != nil {
-					// handle err
-				}
-				req.Header.Set("Accept", "application/json")
-				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-				resp, err := http.DefaultClient.Do(req)
-				if err != nil {
-					// handle err
-				}
-				fmt.Println("done")
-				fmt.Println(resp.Body)
-				defer resp.Body.Close()
-
-				// Send to Kiosk
-				msg := namedpiper.Msg{"{\"source\": \"connect\",\"status\":\"REQUEST-NEW-SESSION\",\"uuid\":\"000000-123-123sadf-asdfsadf-asdfsdaf\",\"height\":\"70\",\"weight\":\"180\"}"}
-				log.Info("Sending to: ", *pub, msg.String())
-				err = namedpiper.Send(&msg, *pub)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-
-			case "SESSION-COMPLETE":
-				captureDirectory := jsonParsed.Path("data.path").Data().(string)
-				fmt.Println("stagingDirectory is: ", *stagingDirectory)
-				err := tarit(captureDirectory, *stagingDirectory)
-				if err != nil {
-					log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
-
-				}
-				filename := filepath.Base(*stagingDirectory)
-
-				// fmt.Println(reflect.TypeOf(uploadFile))
-				filename = filepath.Base(captureDirectory)
-				target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
-
-				// Upload to GCS
-				UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
-				fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
-
-				err = os.Rename(target, strings.Join(fullCompleteFile, ""))
-
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-
-			case "SESSION-PARTIAL":
-				captureDirectory := jsonParsed.Path("data.path").Data().(string)
-				fmt.Println("stagingDirectory is: ", *stagingDirectory)
-				err := tarit(captureDirectory, *stagingDirectory)
-				if err != nil {
-					log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
-
-				}
-				filename := filepath.Base(*stagingDirectory)
-
-				// fmt.Println(reflect.TypeOf(uploadFile))
-				filename = filepath.Base(captureDirectory)
-				target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
-				fullStagingFile := []string{captureDirectory, "/", filename, ".tar"}
-
-				log.Info("Uploading to GCS: ", target)
-				UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
-				fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
-
-				err = os.Rename(strings.Join(fullStagingFile, ""), strings.Join(fullCompleteFile, ""))
-
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-
-			case "SESSION-ABORT":
-				captureDirectory := jsonParsed.Path("data.path").Data().(string)
-
-				fmt.Printf("Deleting (recursively) %v", captureDirectory)
-				os.RemoveAll(captureDirectory)
-				os.Exit(0)
-			default:
-				// do nothing for now.
-				fmt.Printf("We did not see a valid status. No action taken")
-				// os.Exit(0)
+			body := strings.NewReader(*message)
+			req, err := http.NewRequest("POST", "https://sp-gcp-alpha.appspot.com/session", body)
+			if err != nil {
+				// handle err
 			}
+			req.Header.Set("Accept", "application/json")
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				// handle err
+			}
+			fmt.Println("done")
+			fmt.Println(resp.Body)
+			defer resp.Body.Close()
+
+			// Save Kiosk session config file to session_dir
+			fmt.Println("Creating file")
+			fmt.Printf(*sessionDir)
+			d1 := []byte("{\"source\": \"connect\",\"status\":\"REQUEST-NEW-SESSION\",\"uuid\":\"000000-123-123sadf-asdfsadf-asdfsdaf\",\"height\":\"70\",\"weight\":\"180\"}")
+			err = ioutil.WriteFile(*sessionDir+"/kiosk_session.json", d1, 0644)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			// Launch Kiosk!  When Kiosk launches it will look in a specific folder for a kiosk_session.json
+			// exec('dari')
+			// Possibly disown this process
 			// os.Exit(0)
+
+		case "SESSION-COMPLETE":
+			captureDirectory := jsonParsed.Path("data.path").Data().(string)
+			fmt.Println("stagingDirectory is: ", *stagingDirectory)
+			err := tarit(captureDirectory, *stagingDirectory)
+			if err != nil {
+				log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
+
+			}
+			filename := filepath.Base(*stagingDirectory)
+
+			// fmt.Println(reflect.TypeOf(uploadFile))
+			filename = filepath.Base(captureDirectory)
+			target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+
+			// Upload to GCS
+			UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+			fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
+
+			err = os.Rename(target, strings.Join(fullCompleteFile, ""))
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+		case "SESSION-PARTIAL":
+			captureDirectory := jsonParsed.Path("data.path").Data().(string)
+			fmt.Println("stagingDirectory is: ", *stagingDirectory)
+			err := tarit(captureDirectory, *stagingDirectory)
+			if err != nil {
+				log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
+
+			}
+			filename := filepath.Base(*stagingDirectory)
+
+			// fmt.Println(reflect.TypeOf(uploadFile))
+			filename = filepath.Base(captureDirectory)
+			target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+			fullStagingFile := []string{captureDirectory, "/", filename, ".tar"}
+
+			log.Info("Uploading to GCS: ", target)
+			UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+			fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
+
+			err = os.Rename(strings.Join(fullStagingFile, ""), strings.Join(fullCompleteFile, ""))
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+		case "SESSION-ABORT":
+			captureDirectory := jsonParsed.Path("data.path").Data().(string)
+
+			fmt.Printf("Deleting (recursively) %v", captureDirectory)
+			os.RemoveAll(captureDirectory)
+			os.Exit(0)
+		default:
+			// do nothing for now.
+			fmt.Printf("We did not see a valid status. No action taken")
+			os.Exit(0)
 		}
 	}
 
 	// detect
-	if *pub != "" && *message != "" {
-		msg := namedpiper.Msg{*message}
-		log.Info("Sending to: ", *pub, msg.String())
+	if *message == "" {
+		Watcher()
+		// msg := namedpiper.Msg{*message}
+		// log.Info("Sending to: ", *pub, msg.String())
 
-		err := namedpiper.Send(&msg, *pub)
-		if err != nil {
-			fmt.Println(err)
-		}
-		//os.Exit(0)
+		// err := namedpiper.Send(&msg, *pub)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// //os.Exit(0)
 	}
 
 }
