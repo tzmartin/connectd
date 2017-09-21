@@ -328,9 +328,9 @@ func main() {
 			default:
 				// do nothing for now.
 				fmt.Printf("We did not see a valid status. No action taken")
-				os.Exit(0)
+				// os.Exit(0)
 			}
-			os.Exit(0)
+			// os.Exit(0)
 		}
 	}
 
