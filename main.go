@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptrace"
 	"os"
@@ -17,12 +18,16 @@ import (
 	"strings"
 	"syscall"
 
+	"golang.org/x/net/websocket"
+
 	"github.com/Jeffail/gabs"
 	log "github.com/Sirupsen/logrus"
 	"github.com/fsnotify/fsnotify"
 )
 
 var (
+	version           = "0.0.5"
+	addrFlag          = flag.String("port", ":5555", "server address:port")
 	pub               = flag.String("pub", "dariconnect", "Publish to unix named pipe (fifo)")
 	sub               = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
 	message           = flag.String("message", "", "JSON encoded string")
@@ -31,6 +36,11 @@ var (
 	stagingDirectory  = flag.String("staging_dir", "", "directory to stash tar files upon creation")
 	sessionDir        = flag.String("session_dir", "", "directory to save Kiosk session configuration as a JSON file")
 )
+
+type payload struct {
+	// the json tag means this will serialize as a lowercased field
+	Message string `json:"data"`
+}
 
 // transport is an http.RoundTripper that keeps track of the in-flight
 // request and implements hooks to report HTTP tracing events.
@@ -171,6 +181,19 @@ func hash_file_md5(filePath string) (string, error) {
 
 }
 
+func wsDataHandler(ws *websocket.Conn) {
+	m2 := payload{"Thanks for the message!"}
+	websocket.JSON.Send(ws, m2)
+}
+
+func wsRootHandler(w http.ResponseWriter, r *http.Request) {
+	content, err := ioutil.ReadFile("README.md")
+	if err != nil {
+		fmt.Println("Could not open file.", err)
+	}
+	fmt.Fprintf(w, "%s", content)
+}
+
 // UploadGCS Upload a file to Google Cloud Storage
 func UploadGCS(filepath, filename string) (err error) {
 	log.Info("Uploading to GCS: ", filepath, filename)
@@ -241,7 +264,9 @@ func UploadGCS(filepath, filename string) (err error) {
 	return
 }
 
-func Watcher() {
+// KioskSessionWatcher Watch for new session files from Kiosk
+func KioskSessionWatcher() {
+	fmt.Println("Watching for new files: " + *sessionDir)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -256,8 +281,8 @@ func Watcher() {
 				log.Println("event:", event)
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					log.Println("modified file:", event.Name)
+					fmt.Sprintf(event.Name)
 					if event.Name == "CREATE" {
-						fmt.Println("UPLOAD DATA!!!")
 						// assume it's a SESSION COMPLETE/PARTIAL from Kiosk
 					}
 				}
@@ -278,7 +303,7 @@ func main() {
 	print("\033[H\033[2J")
 	flag.Parse()
 	fmt.Println("\nDARI Connect")
-	fmt.Println("Version 0.0.4")
+	fmt.Println("Version " + version)
 	fmt.Printf("pid: %d\n", os.Getpid())
 	fmt.Println("Copyright (c) 2017 Scientific Analytics, Inc.")
 	fmt.Println("")
@@ -409,15 +434,21 @@ func main() {
 
 	// detect
 	if *message == "" {
-		Watcher()
-		// msg := namedpiper.Msg{*message}
-		// log.Info("Sending to: ", *pub, msg.String())
+		// Start socket server
+		go func() {
+			fmt.Println("Websocket server: http://127.0.0.1:" + *addrFlag + "/data")
+			http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprintf(w, "Hello from connectd v%s - random %d", version, rand.Int())
+			}))
+			http.Handle("/data", websocket.Handler(wsDataHandler))
+			err := http.ListenAndServe(*addrFlag, nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}()
 
-		// err := namedpiper.Send(&msg, *pub)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
-		// //os.Exit(0)
+		// Watch for new Kiosk files
+		KioskSessionWatcher()
 	}
 
 }

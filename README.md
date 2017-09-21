@@ -4,12 +4,15 @@
 
 > A service for managing communication flow patterns, data processing and visualization
 
-## Latest Release: 0.0.4
+## Todo
+
+- spawn only one session of connectd?  Or should we allow multiple instances?
+
+## Latest Release: 0.0.5
 
 **Release Notes: 0.0.5** - September 21, 2017
 
-- websocket server
-- spawn only one session of connectd
+- websocket server port ::5555/data
 
 **Release Notes: 0.0.4** - September 21, 2017
 
