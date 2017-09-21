@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptrace"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -29,6 +30,25 @@ var (
 	completeDirectory = flag.String("complete_dir", "", "directory to stash completed files")
 	stagingDirectory  = flag.String("staging_dir", "", "directory to stash tar files upon creation")
 )
+
+// transport is an http.RoundTripper that keeps track of the in-flight
+// request and implements hooks to report HTTP tracing events.
+type transport struct {
+	current *http.Request
+}
+
+// RoundTrip wraps http.DefaultTransport.RoundTrip to keep track
+// of the current request.
+func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	t.current = req
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+// GotConn prints whether the connection has been used previously
+// for the current request.
+func (t *transport) GotConn(info httptrace.GotConnInfo) {
+	fmt.Printf("Connection reused for %v? %v\n", t.current.URL, info.Reused)
+}
 
 //create a map for storing clear funcs
 var clear map[string]func()
@@ -152,7 +172,8 @@ func hash_file_md5(filePath string) (string, error) {
 
 // UploadGCS Upload a file to Google Cloud Storage
 func UploadGCS(filepath, filename string) (err error) {
-
+	log.Info("Uploading to GCS: ", filepath, filename)
+	t := &transport{}
 	fileToUpload, err := os.Open(filepath + "/" + filename)
 	if err != nil {
 		fmt.Println(err)
@@ -169,9 +190,30 @@ func UploadGCS(filepath, filename string) (err error) {
 	if err != nil {
 		// handle err
 	}
+	trace := &httptrace.ClientTrace{
+		GotConn: t.GotConn,
+		ConnectStart: func(network, addr string) {
+			fmt.Println("Dial start")
+		},
+		ConnectDone: func(network, addr string, err error) {
+			fmt.Println("Dial done")
+		},
+		GotFirstResponseByte: func() {
+			fmt.Println("First response byte")
+		},
+		WroteHeaders: func() {
+			fmt.Println("Wrote headers")
+		},
+		WroteRequest: func(wr httptrace.WroteRequestInfo) {
+			fmt.Println("Wrote request", wr)
+		},
+	}
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{Transport: t}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		// handle err
 	}
@@ -202,7 +244,7 @@ func main() {
 	print("\033[H\033[2J")
 	flag.Parse()
 	fmt.Println("\nDARI Connect")
-	fmt.Println("Version 0.0.2")
+	fmt.Println("Version 0.0.3")
 	fmt.Printf("pid: %d\n", os.Getpid())
 	fmt.Println("Copyright (c) 2017 Scientific Analytics, Inc.")
 	fmt.Println("")
@@ -243,7 +285,7 @@ func main() {
 			status := jsonParsed.Path("status").Data()
 
 			switch statusState := status; statusState {
-			case "REQUEST-NEW-SESSION":
+			case "API-NEW-SESSION":
 
 				body := strings.NewReader(msg.String())
 				req, err := http.NewRequest("POST", "https://sp-gcp-alpha.appspot.com/session", body)
@@ -257,17 +299,18 @@ func main() {
 				if err != nil {
 					// handle err
 				}
+				fmt.Println("done")
 				fmt.Println(resp.Body)
 				defer resp.Body.Close()
-				// {
-				// "uid": "ABCD1234",
-				// "fname": "bob",
-				// "lname": "jones",
-				// "height": "70",
-				// "weight": "180",
-				// "protocol": [],
-				// "prompt": true
-				// }
+
+				// Send to Kiosk
+				msg := namedpiper.Msg{"{\"source\": \"connect\",\"status\":\"REQUEST-NEW-SESSION\",\"uuid\":\"000000-123-123sadf-asdfsadf-asdfsdaf\",\"height\":\"70\",\"weight\":\"180\"}"}
+				log.Info("Sending to: ", *pub, msg.String())
+				err = namedpiper.Send(&msg, *pub)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
 
 			case "SESSION-COMPLETE":
 				captureDirectory := jsonParsed.Path("data.path").Data().(string)
@@ -283,7 +326,7 @@ func main() {
 				filename = filepath.Base(captureDirectory)
 				target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
 
-				log.Info("Uploading to GCS: ", target)
+				// Upload to GCS
 				UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
 				fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
 
@@ -336,7 +379,6 @@ func main() {
 	}
 
 	// detect
-	fmt.Println("HI")
 	if *pub != "" && *message != "" {
 		msg := namedpiper.Msg{*message}
 		log.Info("Sending to: ", *pub, msg.String())

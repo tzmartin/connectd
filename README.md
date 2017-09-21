@@ -4,7 +4,16 @@
 
 > A service for managing communication flow patterns, data processing and visualization
 
-## Latest Release: 0.0.1
+## Latest Release: 0.0.4
+
+**Release Notes: 0.0.4** - September 21, 2017
+
+- Added IPC events according to [IPC Specification](https://docs.google.com/document/d/1XOiNHH9BwMXb0EZpWmK3kljaMJnmunjiiR692iOUg6w/edit)
+- Added staging, completed dir flags
+- Added http client for GCS uploads to `session-ingest` bucket
+- Added md5 hash validation for uploads
+- Added http trace for monitoring lifecycle
+- Added concurrency and parralel uploading
 
 **Release Notes** - August 11, 2017
 
