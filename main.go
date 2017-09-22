@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	version           = "0.0.5"
+	version           = "0.0.6"
 	addrFlag          = flag.String("port", ":5555", "server address:port")
 	pub               = flag.String("pub", "dariconnect", "Publish to unix named pipe (fifo)")
 	sub               = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
@@ -35,7 +35,7 @@ var (
 	FIFO_DIR          = flag.String("dir", "/tmp/pipes", "FIFO directory absolute path")
 	completeDirectory = flag.String("complete_dir", "", "directory to stash completed files")
 	stagingDirectory  = flag.String("staging_dir", "", "directory to stash tar files upon creation")
-	sessionDir        = flag.String("session_dir", "", "directory to save Kiosk session configuration as a JSON file")
+	kioskSessionDir   = flag.String("kiosk_session_dir", "", "directory to save Kiosk session configuration as a JSON file")
 )
 
 type payload struct {
@@ -267,7 +267,7 @@ func UploadGCS(filepath, filename string) (err error) {
 
 // KioskSessionWatcher Watch for new session files from Kiosk
 func KioskSessionWatcher() {
-	fmt.Println("Watching for new files: " + *sessionDir)
+	fmt.Println("Watching for new files: " + *kioskSessionDir)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -293,7 +293,7 @@ func KioskSessionWatcher() {
 		}
 	}()
 
-	err = watcher.Add(*sessionDir)
+	err = watcher.Add(*kioskSessionDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -356,9 +356,9 @@ func main() {
 
 			// Save Kiosk session config file to session_dir
 			fmt.Println("Creating file")
-			fmt.Printf(*sessionDir)
-			d1 := []byte("{\"source\": \"connect\",\"status\":\"REQUEST-NEW-SESSION\",\"uuid\":\"000000-123-123sadf-asdfsadf-asdfsdaf\",\"height\":\"70\",\"weight\":\"180\"}")
-			err = ioutil.WriteFile(*sessionDir+"/kiosk_session.json", d1, 0644)
+			fmt.Printf(*kioskSessionDir)
+			d1 := []byte("{\"source\": \"connect\",\"status\":\"REQUEST-NEW-SESSION\",\"uid\":\"1111-some-uid\",\"uuid\":\"000000-123-123sadf-asdfsadf-asdfsdaf\",\"height\":\"70\",\"weight\":\"180\"}")
+			err = ioutil.WriteFile(*kioskSessionDir+"/kiosk_session.json", d1, 0644)
 			if err != nil {
 				fmt.Println(err)
 				return
@@ -437,9 +437,9 @@ func main() {
 	if *message == "" {
 		// Start socket server
 		go func() {
-			fmt.Println("Websocket server: http://127.0.0.1:" + *addrFlag + "/data")
+			fmt.Println("Websocket server: http://127.0.0.1" + *addrFlag + "/data")
 			http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprintf(w, "Hello from connectd v%s - random %d", version, rand.Int())
+				fmt.Fprintf(w, "connectd v%s - random %d", version, rand.Int())
 			}))
 			http.Handle("/data", websocket.Handler(wsDataHandler))
 			err := http.ListenAndServe(*addrFlag, nil)
