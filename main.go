@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	version           = "0.0.7"
+	version           = "0.0.8"
 	addrFlag          = flag.String("port", ":5555", "server address:port")
 	pub               = flag.String("pub", "dariconnect", "Publish to unix named pipe (fifo)")
 	sub               = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
@@ -294,7 +294,7 @@ func UploadGCS(filepath, filename string) (err error) {
 
 // KioskSessionWatcher Watch for new session files from Kiosk
 func KioskSessionWatcher() {
-	fmt.Println("Watching for new files: " + *kioskSessionDir)
+	fmt.Println("Watching for new files: " + *stagingDirectory)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -321,7 +321,7 @@ func KioskSessionWatcher() {
 		}
 	}()
 
-	err = watcher.Add(*kioskSessionDir)
+	err = watcher.Add(*stagingDirectory)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -385,7 +385,7 @@ func main() {
 			// Save Kiosk session config file to session_dir
 			fmt.Println("Creating file")
 			fmt.Printf(*kioskSessionDir)
-			d1 := []byte("{\"source\": \"connect\",\"status\":\"REQUEST-NEW-SESSION\",\"uid\":\"1111-some-uid\",\"uuid\":\"000000-123-123sadf-asdfsadf-asdfsdaf\",\"height\":\"70\",\"weight\":\"180\"}")
+			d1 := []byte("{\"source\": \"connect\",\"status\":\"REQUEST-NEW-SESSION\",\"protocol\":\"EXOS MQ\",\"uid\":\"1111-some-uid\",\"uuid\":\"000000-123-123sadf-asdfsadf-asdfsdaf\",\"height\":\"70\",\"weight\":\"180\"}")
 			err = ioutil.WriteFile(*kioskSessionDir+"/kiosk_session.json", d1, 0644)
 			if err != nil {
 				fmt.Println(err)
@@ -393,7 +393,7 @@ func main() {
 			}
 
 			// Launch Kiosk!  When Kiosk launches it will look in a specific folder for a kiosk_session.json
-			cmd := exec.Command("./usr/local/sbin/dari")
+			cmd := exec.Command("/usr/local/sbin/dari")
 			cmd.Start()
 			os.Exit(0)
 
