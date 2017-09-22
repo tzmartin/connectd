@@ -14,6 +14,7 @@ import (
 	"net/http/httptrace"
 	"os"
 	"os/signal"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -364,9 +365,9 @@ func main() {
 			}
 
 			// Launch Kiosk!  When Kiosk launches it will look in a specific folder for a kiosk_session.json
-			// exec('dari')
-			// Possibly disown this process
-			// os.Exit(0)
+			cmd := exec.Command("./dari")
+    	cmd.Start()
+			os.Exit(0)
 
 		case "SESSION-COMPLETE":
 			captureDirectory := jsonParsed.Path("data.path").Data().(string)
