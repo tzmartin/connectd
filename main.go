@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	version           = "0.0.6"
+	version           = "0.0.7"
 	addrFlag          = flag.String("port", ":5555", "server address:port")
 	pub               = flag.String("pub", "dariconnect", "Publish to unix named pipe (fifo)")
 	sub               = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
