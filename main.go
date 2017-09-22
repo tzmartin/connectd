@@ -14,6 +14,7 @@ import (
 	"net/http/httptrace"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -258,11 +259,37 @@ func UploadGCS(filepath, filename string) (err error) {
 			log.Fatal("error:", err)
 		}
 		fmt.Println("gcs hash is", gcsMd5Hex)
+
+		// Move to completed folder
+		fullCompleteFile := []string{*completeDirectory, filename, ".tar"}
+		err = os.Rename(fileToUpload.Name(), strings.Join(fullCompleteFile, ""))
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	defer resp.Body.Close()
 	return
 }
+
+// func fileWatchHandler() {
+// 	fmt.Println("stagingDirectory is: ", *stagingDirectory)
+
+// 	// fmt.Println(reflect.TypeOf(uploadFile))
+// 	filename = filepath.Base(captureDirectory)
+// 	target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+
+// Upload to GCS
+// UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+// fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
+
+// err = os.Rename(target, strings.Join(fullCompleteFile, ""))
+
+// if err != nil {
+// 	fmt.Println(err)
+// 	return
+// }
+// }
 
 // KioskSessionWatcher Watch for new session files from Kiosk
 func KioskSessionWatcher() {
@@ -278,13 +305,14 @@ func KioskSessionWatcher() {
 		for {
 			select {
 			case event := <-watcher.Events:
-				log.Println("event:", event)
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Println("modified file:", event.Name)
-					fmt.Sprintf(event.Name)
-					if event.Name == "CREATE" {
-						// assume it's a SESSION COMPLETE/PARTIAL from Kiosk
-					}
+				// log.Println("event:", event)
+				if event.Op&fsnotify.Create == fsnotify.Create {
+					// assume it's a SESSION COMPLETE/PARTIAL from Kiosk
+					log.Println("Found new file: " + path.Base(event.Name))
+					filename := fmt.Sprintf("%s", path.Base(event.Name))
+
+					// Upload to GCS
+					UploadGCS(*stagingDirectory, filename)
 				}
 			case err := <-watcher.Errors:
 				log.Println("error:", err)
@@ -367,31 +395,6 @@ func main() {
 			// exec('dari')
 			// Possibly disown this process
 			// os.Exit(0)
-
-		case "SESSION-COMPLETE":
-			captureDirectory := jsonParsed.Path("data.path").Data().(string)
-			fmt.Println("stagingDirectory is: ", *stagingDirectory)
-			err := tarit(captureDirectory, *stagingDirectory)
-			if err != nil {
-				log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
-
-			}
-			filename := filepath.Base(*stagingDirectory)
-
-			// fmt.Println(reflect.TypeOf(uploadFile))
-			filename = filepath.Base(captureDirectory)
-			target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
-
-			// Upload to GCS
-			UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
-			fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
-
-			err = os.Rename(target, strings.Join(fullCompleteFile, ""))
-
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
 
 		case "SESSION-PARTIAL":
 			captureDirectory := jsonParsed.Path("data.path").Data().(string)
