@@ -365,7 +365,8 @@ func main() {
 			}
 
 			// Launch Kiosk!  When Kiosk launches it will look in a specific folder for a kiosk_session.json
-			cmd := exec.Command("./dari")
+			cmd := exec.Command("./usr/local/sbin
+dari")
     	cmd.Start()
 			os.Exit(0)
 
