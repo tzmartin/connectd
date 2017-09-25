@@ -41,6 +41,7 @@ var (
 
 type payload struct {
 	// the json tag means this will serialize as a lowercased field
+	Status  string `json:"status"`
 	Message string `json:"data"`
 }
 
@@ -184,7 +185,11 @@ func hash_file_md5(filePath string) (string, error) {
 }
 
 func wsDataHandler(ws *websocket.Conn) {
-	m2 := payload{"Thanks for the message!"}
+	// connection
+	m2 := payload{
+		Status:  "200",
+		Message: "{\"message\":\"connected\"}",
+	}
 	websocket.JSON.Send(ws, m2)
 }
 
