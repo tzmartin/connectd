@@ -191,6 +191,92 @@ func wsDataHandler(ws *websocket.Conn) {
 		Message: "{\"message\":\"connected\"}",
 	}
 	websocket.JSON.Send(ws, m2)
+	// Read
+  msg := ""
+  err := websocket.Message.Receive(ws, &msg)
+  if err != nil {
+    fmt.Println(err)
+  }
+  fmt.Printf("%s\n", msg)
+
+	jsonParsed, _ := gabs.ParseJSON([]byte(msg))
+	status := jsonParsed.Path("status").Data()
+
+	// Check status property in JSON object
+	switch statusState := status; statusState {
+	case "API-NEW-SESSION":
+		fmt.Println("NEW SESSION")
+
+		body := strings.NewReader(*message)
+		req, err := http.NewRequest("POST", "https://sp-gcp-alpha.appspot.com/session", body)
+		if err != nil {
+			// handle err
+		}
+		req.Header.Set("Accept", "application/json")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			// handle err
+		}
+		fmt.Println("done")
+		fmt.Println(resp.Body)
+		defer resp.Body.Close()
+
+		// Save Kiosk session config file to session_dir
+		fmt.Println("Creating file")
+		fmt.Printf(*kioskSessionDir)
+		d1 := []byte("{\"source\": \"connect\",\"status\":\"REQUEST-NEW-SESSION\",\"protocol\":\"EXOS MQ\",\"uid\":\"1111-some-uid\",\"uuid\":\"000000-123-123sadf-asdfsadf-asdfsdaf\",\"height\":\"70\",\"weight\":\"180\"}")
+		err = ioutil.WriteFile(*kioskSessionDir+"/kiosk_session.json", d1, 0644)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		// Launch Kiosk!  When Kiosk launches it will look in a specific folder for a kiosk_session.json
+		cmd := exec.Command("/usr/local/sbin/dari")
+		cmd.Start()
+		os.Exit(0)
+
+	case "SESSION-PARTIAL":
+		captureDirectory := jsonParsed.Path("data.path").Data().(string)
+		fmt.Println("stagingDirectory is: ", *stagingDirectory)
+		err := tarit(captureDirectory, *stagingDirectory)
+		if err != nil {
+			log.Info("was unable to tar file, captureDirectory:", captureDirectory, " stagingDirectory  ", *stagingDirectory)
+
+		}
+		filename := filepath.Base(*stagingDirectory)
+
+		// fmt.Println(reflect.TypeOf(uploadFile))
+		filename = filepath.Base(captureDirectory)
+		target := filepath.Join(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+		fullStagingFile := []string{captureDirectory, "/", filename, ".tar"}
+
+		log.Info("Uploading to GCS: ", target)
+		UploadGCS(*stagingDirectory, fmt.Sprintf("%s.tar", filename))
+		fullCompleteFile := []string{*completeDirectory, "/", filename, ".tar"}
+
+		err = os.Rename(strings.Join(fullStagingFile, ""), strings.Join(fullCompleteFile, ""))
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+	case "SESSION-ABORT":
+		captureDirectory := jsonParsed.Path("data.path").Data().(string)
+
+		fmt.Printf("Deleting (recursively) %v", captureDirectory)
+		os.RemoveAll(captureDirectory)
+		os.Exit(0)
+	default:
+		// do nothing for now.
+		fmt.Printf("We did not see a valid status. No action taken")
+		os.Exit(0)
+	}
+
+
 }
 
 func wsRootHandler(w http.ResponseWriter, r *http.Request) {
@@ -361,6 +447,7 @@ func main() {
 
 	// JSON payload exists
 	if *message != "" {
+
 		log.Info(*message)
 		jsonParsed, _ := gabs.ParseJSON([]byte(*message))
 
@@ -454,6 +541,9 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+
+
+
 		}()
 
 		// Watch for new Kiosk files
