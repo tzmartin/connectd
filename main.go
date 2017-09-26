@@ -28,7 +28,8 @@ import (
 )
 
 var (
-	version           = "0.0.8"
+	appname           = "connectd"
+	versionFlag       = flag.Bool("version", false, "")
 	addrFlag          = flag.String("port", ":5555", "server address:port")
 	pub               = flag.String("pub", "dariconnect", "Publish to unix named pipe (fifo)")
 	sub               = flag.String("sub", "dariconnect", "Subscribe to unix named pipe (fifo). Defaults to dariconnect")
@@ -49,6 +50,12 @@ type payload struct {
 // request and implements hooks to report HTTP tracing events.
 type transport struct {
 	current *http.Request
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
 }
 
 // RoundTrip wraps http.DefaultTransport.RoundTrip to keep track
@@ -184,23 +191,49 @@ func hash_file_md5(filePath string) (string, error) {
 
 }
 
+func wsDataHandler2(ws *websocket.Conn) {
+	fmt.Println("Request received")
+	// connection
+	// m2 := payload{
+	// 	Status:  "200",
+	// 	Message: "{\"message\":\"connected\"}",
+	// }
+	// Write
+	// err := websocket.JSON.Send(ws, m2)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
+	// Read
+	msg := ""
+	err := websocket.Message.Receive(ws, &msg)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("%s\n", msg, ws)
+}
+
 func wsDataHandler(ws *websocket.Conn) {
 	// connection
 	m2 := payload{
 		Status:  "200",
 		Message: "{\"message\":\"connected\"}",
 	}
+
+	// Send connection confirmation
 	websocket.JSON.Send(ws, m2)
+
 	// Read
-  msg := ""
-  err := websocket.Message.Receive(ws, &msg)
-  if err != nil {
-    fmt.Println(err)
-  }
-  fmt.Printf("%s\n", msg)
+	msg := ""
+	err := websocket.Message.Receive(ws, &msg)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	jsonParsed, _ := gabs.ParseJSON([]byte(msg))
 	status := jsonParsed.Path("status").Data()
+
+	fmt.Printf(msg)
 
 	// Check status property in JSON object
 	switch statusState := status; statusState {
@@ -210,14 +243,14 @@ func wsDataHandler(ws *websocket.Conn) {
 		body := strings.NewReader(*message)
 		req, err := http.NewRequest("POST", "https://sp-gcp-alpha.appspot.com/session", body)
 		if err != nil {
-			// handle err
+			fmt.Println(err)
 		}
 		req.Header.Set("Accept", "application/json")
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			// handle err
+			fmt.Println(err)
 		}
 		fmt.Println("done")
 		fmt.Println(resp.Body)
@@ -234,9 +267,10 @@ func wsDataHandler(ws *websocket.Conn) {
 		}
 
 		// Launch Kiosk!  When Kiosk launches it will look in a specific folder for a kiosk_session.json
-		cmd := exec.Command("/usr/local/sbin/dari")
+		cmd := exec.Command("/usr/local/sbin/dari", "Session created")
 		cmd.Start()
-		os.Exit(0)
+		// os.Exit(0)
+		break
 
 	case "SESSION-PARTIAL":
 		captureDirectory := jsonParsed.Path("data.path").Data().(string)
@@ -263,19 +297,19 @@ func wsDataHandler(ws *websocket.Conn) {
 			fmt.Println(err)
 			return
 		}
+		break
 
 	case "SESSION-ABORT":
 		captureDirectory := jsonParsed.Path("data.path").Data().(string)
 
 		fmt.Printf("Deleting (recursively) %v", captureDirectory)
 		os.RemoveAll(captureDirectory)
-		os.Exit(0)
+		break
 	default:
 		// do nothing for now.
-		fmt.Printf("We did not see a valid status. No action taken")
-		os.Exit(0)
+		// fmt.Printf("We did not see a valid status. No action taken")
+		// os.Exit(0)
 	}
-
 
 }
 
@@ -422,7 +456,20 @@ func KioskSessionWatcher() {
 func main() {
 	print("\033[H\033[2J")
 	flag.Parse()
-	fmt.Println("\nDARI Connect")
+
+	// Read current version from file
+	versiondat, err := ioutil.ReadFile("version")
+	check(err)
+
+	// add double dash flag parser
+	version := string(versiondat)
+
+	if *versionFlag == true {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
+	fmt.Printf("%s\n", appname)
 	fmt.Println("Version " + version)
 	fmt.Printf("pid: %d\n", os.Getpid())
 	fmt.Println("Copyright (c) 2017 Scientific Analytics, Inc.")
@@ -541,8 +588,6 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-
-
 
 		}()
 
