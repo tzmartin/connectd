@@ -21,7 +21,8 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
-
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/net/websocket"
 
 	"github.com/Jeffail/gabs"
@@ -130,6 +131,21 @@ func init() {
 func fileWhiteListHandler(path string) string {
 	fmt.Println("Inspecting:  ", path)
 	return path
+}
+
+// example Read table with sqlite3
+// Be sure to read this: https://github.com/mattn/go-sqlite3#faq
+// you'll also need to change sql.db to the actual sqlite file location ( I think )
+
+func getProtocolFile(db *sql.DB) []TestItem {
+	var s NullString
+    err := db.QueryRow("SELECT file FROM protocols WHERE protocol_id=?", id).Scan(&s)
+  
+    if s.Valid {
+       // use s.String
+    } else {
+       // NULL value
+    }
 }
 
 func tarit(source, target string) error {
