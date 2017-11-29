@@ -49,6 +49,7 @@ var (
 	kioskSessionDir   = flag.String("kiosk_session_dir", "/home/dari/Desktop/CaptureData/.Connect/requests", "directory to save Kiosk session configuration as a JSON file")
 )
 
+
 type payload struct {
 	// the json tag means this will serialize as a lowercased field
 	Status  string `json:"status"`
@@ -60,6 +61,7 @@ type payload struct {
 type transport struct {
 	current *http.Request
 }
+
 
 // Session A model for session
 type NewSessionResponse struct {
@@ -85,6 +87,7 @@ func check(e error) {
 		fmt.Print(e, "/n")
 	}
 }
+
 
 // RoundTrip wraps http.DefaultTransport.RoundTrip to keep track
 // of the current request.
@@ -576,6 +579,7 @@ func wsRootHandler(w http.ResponseWriter, r *http.Request) {
 func UploadGCS(filepath, filename string) (err error) {
 	log.Info("Uploading to GCS: ", filepath, filename, wsCtx)
 
+
 	t := &transport{}
 	fileToUpload, err := os.Open(filepath + "/" + filename)
 	if err != nil {
@@ -780,7 +784,6 @@ func dbWatcher() {
 func main() {
 	print("\033[H\033[2J")
 	flag.Parse()
-
 	// Read current version from file
 	// versiondat, err := ioutil.ReadFile("version")
 	// check(err)
@@ -837,6 +840,7 @@ func main() {
 			// sessionConfigJSON, _ := json.Marshal(sessionConfig)
 			// fmt.Println(string(kioskConfigJSON))
 
+
 			body := strings.NewReader(`{"action":"session-create","data":{"height":"70","weight":"205","fname":"Jason","lname":"Nelson","uid":"TESTDARI02"}}`)
 			req, err := http.NewRequest("POST", "http://130.211.176.189/api/v1/session", body)
 			if err != nil {
@@ -875,6 +879,7 @@ func main() {
 				fmt.Println(err)
 				return
 			}
+
 
 			// Launch Kiosk!  When Kiosk launches it will look in a specific folder for a kiosk_session.json
 			// /usr/local/sbin/dari
@@ -920,10 +925,12 @@ func main() {
 			// do nothing for now.
 			fmt.Printf("No action taken. Message is depcrecated")
 			os.Exit(0)
+
 		}
 	}
 
 	// detect
+
 	if *message == "" {
 		// Start socket server
 		go func() {
