@@ -8,7 +8,12 @@
 
 - spawn only one session of connectd?  Or should we allow multiple instances?
 
-## Latest Release: 0.0.8
+## Latest Release: 0.1.7
+
+0.1.7 - October 10, 2017
+
+- Added Protocol property to NewSessionResponse
+- Fix nil unit_mode
 
 **Release Notes: 0.0.8** - September 22, 2017
 
@@ -70,11 +75,37 @@ Binaries:
 
 ## Security
 
-## Background
+## API
+
+### New Session
+
+Registers a new session guid.
+
+Request
+
+```
+{"status":"API-NEW-SESSION","data":{"action":"new-session","height":"100","weight":"80","uid":""}}
+```
+
+**Response - Success**
+
+```
+200 OK
+{"status":"ok","version":"0.0.1","timestamp":"2017-10-01 04:06:19","data":{"fname":"USER","lname":"KIOSK","person-mrn":"","session-guid":"51e72ff8-63c3-417c-995a-de44f005181a","upload_path":"https:\/\/www.googleapis.com\/upload\/storage\/v1\/b\/solar-router-162818-session-ingest\/"}}
+ ```
+
+**Response - Error**
+
+```
+200 OK
+{"status":"error","version":"0.0.1","timestamp":"2017-10-01 04:03:16","message":"Missing height, or weight."}
+```
 
 ## Install
 
-Requires go version > 1.3. Tested 1.8.3 (darwin/amd64). [Installation instructions](https://golang.org/doc/install)
+Requires go version > 1.8. Tested 1.8.3 (darwin/amd64). [Installation instructions](https://golang.org/doc/install)
+
+go1.8rc2 has the `go/build/defaultGOPATH` function which gets the home directory.
 
 **Dependencies**
 
